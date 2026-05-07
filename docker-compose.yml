@@ -1,0 +1,56 @@
+services:
+  postgresql:
+    image: postgres:16
+    hostname: postgresql
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: db_user
+      POSTGRES_PASSWORD: db_pwd
+      POSTGRES_DB: postgres
+      POSTGRES_HOST_AUTH_METHOD: "scram-sha-256"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    container_name: pgadmin4_container
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: test@test.com
+      PGADMIN_DEFAULT_PASSWORD: test_pwd
+    ports:
+      - "5050:80"
+   
+  event-state-service:
+    image: event-state-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: event-state-service-svc-container
+    environment:
+      DB_URL: jdbc:postgresql://postgresql:5432/postgres
+      DB_USERNAME: db_user
+      DB_PASSWORD: db_pwd
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+    ports:
+      - "8083:8083"
+    depends_on:
+      - postgresql
+      - mailpit
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: mailpit
+    ports:
+      - "8025:8025"   # Web UI — open http://localhost:8025 in browser
+      - "1025:1025"   # SMTP server — apps send mail here
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+volumes:
+  postgres_data:
+  
+
+  
